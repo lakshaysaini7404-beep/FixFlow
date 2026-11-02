@@ -1,0 +1,112 @@
+
+/* FIXFLOW — DARK THEME (DEFAULT) */
+:root,
+:root[data-theme="dark"] {
+  color-scheme: dark;
+
+  --bg: #0b1220;
+  --surface: #111c30;
+  --surface-secondary: #172640;
+  --navbar-bg: #0b1220;
+  --sidebar-bg: #101b2e;
+
+  --text: #f1f5f9;
+  --text-secondary: #a8b5c9;
+
+  --primary: #3b82f6;
+  --primary-hover: #2563eb;
+
+  --border: #26364d;
+  --input-bg: #111c30;
+  --table-hover: #172640;
+
+  --shadow: 0 8px 30px rgba(0, 0, 0, 0.2);
+}
+
+/* FIXFLOW — LIGHT THEME */
+:root[data-theme="light"] {
+  color-scheme: light;
+
+  --bg: #f4f7fb;
+  --surface: #ffffff;
+  --surface-secondary: #f8fafc;
+  --navbar-bg: #ffffff;
+  --sidebar-bg: #ffffff;
+
+  --text: #172033;
+  --text-secondary: #64748b;
+
+  --primary: #2563eb;
+  --primary-hover: #1d4ed8;
+
+  --border: #e2e8f0;
+  --input-bg: #ffffff;
+  --table-hover: #eff6ff;
+
+  --shadow: 0 8px 30px rgba(15, 23, 42, 0.06);
+}
+
+/* Global defaults */
+html,
+body,
+#root {
+  min-height: 100%;
+}
+
+body {
+  margin: 0;
+  background: var(--bg);
+  color: var(--text);
+  transition:
+    background-color 0.25s ease,
+    color 0.25s ease;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+/* Common app surfaces */
+.card,
+.panel,
+.dashboard-card,
+.stat-card,
+.modal-content,
+.dropdown-menu {
+  background: var(--surface);
+  color: var(--text);
+  border-color: var(--border);
+}
+
+input,
+textarea,
+select {
+  background: var(--input-bg);
+  color: var(--text);
+  border-color: var(--border);
+}
+
+input::placeholder,
+textarea::placeholder {
+  color: var(--text-secondary);
+}
+
+table th,
+table td {
+  border-color: var(--border);
+}
+
+table tbody tr:hover {
+  background: var(--table-hover);
+}
+
+.text-secondary {
+  color: var(--text-secondary);
+}
+
+.theme-surface {
+  background: var(--surface);
+  color: var(--text);
+  border: 1px solid var(--border);
+  box-shadow: var(--shadow);
+}

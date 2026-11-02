@@ -1,0 +1,50 @@
+
+.theme-toggle {
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  width: 76px;
+  height: 38px;
+  padding: 0 10px;
+  border: 1px solid var(--border);
+  border-radius: 30px;
+  cursor: pointer;
+  background: var(--surface-secondary);
+  color: var(--text);
+  flex-shrink: 0;
+  transition: background-color 0.25s ease;
+}
+
+.theme-icon {
+  z-index: 1;
+  flex-shrink: 0;
+}
+
+.sun-icon {
+  color: #f59e0b;
+}
+
+.moon-icon {
+  color: #3b82f6;
+}
+
+.theme-toggle-thumb {
+  position: absolute;
+  left: 3px;
+  top: 3px;
+  width: 30px;
+  height: 30px;
+  border-radius: 50%;
+  background: var(--primary);
+  transition: transform 0.25s ease;
+}
+
+.theme-toggle.is-light .theme-toggle-thumb {
+  transform: translateX(38px);
+}
+
+.theme-toggle:focus-visible {
+  outline: 2px solid var(--primary);
+  outline-offset: 3px;
+}

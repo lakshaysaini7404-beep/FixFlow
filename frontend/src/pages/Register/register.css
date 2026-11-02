@@ -1,4 +1,122 @@
 
+/* ========================================
+   EMAIL OTP VERIFICATION
+======================================== */
+
+.register-otp-send,
+.register-otp-verify {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  width: 100%;
+  min-height: 43px;
+  margin-top: 10px;
+  padding: 10px 14px;
+  border: 1px solid #2563eb;
+  border-radius: 10px;
+  background: #ffffff;
+  color: #2563eb;
+  font: inherit;
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 0.2s ease, color 0.2s ease,
+    border-color 0.2s ease;
+}
+
+.register-otp-send:hover:not(:disabled) {
+  background: #eff6ff;
+}
+
+.register-otp-verify {
+  margin-top: 12px;
+  background: #2563eb;
+  color: #ffffff;
+}
+
+.register-otp-verify:hover:not(:disabled) {
+  background: #1d4ed8;
+}
+
+.register-otp-send:disabled,
+.register-otp-verify:disabled {
+  opacity: 0.55;
+  cursor: not-allowed;
+}
+
+.register-otp-panel {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin-top: 14px;
+  padding: 16px;
+  border: 1px solid #dbeafe;
+  border-radius: 12px;
+  background: #f8fbff;
+}
+
+.register-otp-panel label {
+  color: #1e293b;
+  font-size: 14px;
+  font-weight: 600;
+}
+
+.register-otp-panel input {
+  width: 100%;
+  box-sizing: border-box;
+  padding: 12px;
+  border: 1px solid #cbd5e1;
+  border-radius: 9px;
+  outline: none;
+  background: #ffffff;
+  color: #0f172a;
+  font: inherit;
+  font-size: 20px;
+  font-weight: 600;
+  letter-spacing: 8px;
+  text-align: center;
+}
+
+.register-otp-panel input:focus {
+  border-color: #2563eb;
+  box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.12);
+}
+
+.register-otp-verified {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  margin-top: 9px;
+  color: #15803d;
+  font-size: 13px;
+  font-weight: 600;
+}
+
+.register-verified-icon {
+  flex-shrink: 0;
+  color: #16a34a;
+}
+
+.register-submit:disabled {
+  opacity: 0.55;
+  cursor: not-allowed;
+}
+
+.register-submit-hint {
+  text-align: center;
+}
+
+.register-spin {
+  animation: register-otp-spin 1s linear infinite;
+}
+
+@keyframes register-otp-spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
 .register-page {
   min-height: 100vh;
   width: 100%;

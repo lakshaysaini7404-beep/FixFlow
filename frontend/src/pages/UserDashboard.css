@@ -1,0 +1,270 @@
+
+/* ===================================
+   FIXFLOW PROFESSIONAL TICKET TABLE
+=================================== */
+
+.ff-table-container {
+  width: 100%;
+  overflow-x: auto;
+  border: 1px solid var(--border-color, #e5eaf1);
+  border-radius: 12px;
+}
+
+.ff-ticket-table {
+  width: 100%;
+  min-width: 950px;
+  table-layout: fixed;
+  border-collapse: collapse;
+  background: var(--card-bg, #ffffff);
+}
+
+/* Header */
+
+.ff-ticket-table thead {
+  background: var(--table-header-bg, #f7f9fc);
+}
+
+.ff-ticket-table th {
+  height: 52px;
+  padding: 0 12px;
+  text-align: left;
+  vertical-align: middle;
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.65px;
+  text-transform: uppercase;
+  color: var(--text-muted, #8792a5);
+  border-bottom: 1px solid var(--border-color, #e5eaf1);
+  white-space: nowrap;
+}
+
+/* Body */
+
+.ff-ticket-table tbody tr {
+  height: 76px;
+  transition: background 0.2s ease;
+}
+
+.ff-ticket-table tbody tr:hover {
+  background: var(--table-hover-bg, #f8faff);
+}
+
+.ff-ticket-table td {
+  padding: 10px 12px;
+  vertical-align: middle;
+  border-bottom: 1px solid var(--border-color, #edf0f5);
+  font-size: 12px;
+  color: var(--text-primary, #334155);
+}
+
+.ff-ticket-table tbody tr:last-child td {
+  border-bottom: none;
+}
+
+/* Ticket ID */
+
+.ff-id {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-width: 0;
+}
+
+.ff-id strong {
+  font-size: 11px;
+  font-weight: 700;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.ff-priority-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+
+.ff-priority-dot.high {
+  background: #ef4444;
+}
+
+.ff-priority-dot.medium {
+  background: #f59e0b;
+}
+
+.ff-priority-dot.low {
+  background: #22c55e;
+}
+
+/* Issue */
+
+.ff-issue {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+  min-width: 0;
+}
+
+.ff-issue strong {
+  font-size: 12px;
+  font-weight: 650;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.ff-issue span {
+  font-size: 10px;
+  color: var(--text-muted, #8b96a8);
+}
+
+/* Location */
+
+.ff-location {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  min-width: 0;
+}
+
+.ff-location svg {
+  flex-shrink: 0;
+  color: var(--text-muted, #8994a7);
+}
+
+.ff-location span {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  color: var(--text-secondary, #64748b);
+  font-size: 11px;
+}
+
+/* Priority */
+
+.ff-priority-badge {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 55px;
+  padding: 6px 9px;
+  border-radius: 6px;
+  font-size: 10px;
+  font-weight: 700;
+}
+
+.ff-priority-badge.high {
+  background: #fee2e2;
+  color: #dc2626;
+}
+
+.ff-priority-badge.medium {
+  background: #fef3c7;
+  color: #b45309;
+}
+
+.ff-priority-badge.low {
+  background: #dcfce7;
+  color: #15803d;
+}
+
+/* Status */
+
+.ff-status-badge {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  padding: 6px 9px;
+  border-radius: 6px;
+  font-size: 10px;
+  font-weight: 650;
+  white-space: nowrap;
+  background: #eff6ff;
+  color: #2563eb;
+}
+
+.ff-status-dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: currentColor;
+}
+
+.ff-status-badge.in-progress {
+  background: #fff7ed;
+  color: #c2410c;
+}
+
+.ff-status-badge.assigned {
+  background: #f3e8ff;
+  color: #7e22ce;
+}
+
+.ff-status-badge.resolved,
+.ff-status-badge.closed {
+  background: #dcfce7;
+  color: #15803d;
+}
+
+.ff-status-badge.cancelled {
+  background: #fee2e2;
+  color: #dc2626;
+}
+
+.ff-status-badge.reopened {
+  background: #fef3c7;
+  color: #b45309;
+}
+
+/* Date */
+
+.ff-date {
+  font-size: 11px;
+  color: var(--text-secondary, #64748b);
+  white-space: nowrap;
+}
+
+/* Action */
+
+.ff-action {
+  display: flex;
+  align-items: center;
+  justify-content: flex-start;
+  gap: 6px;
+}
+
+.ff-view-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 5px;
+  padding: 7px 10px;
+  border: 1px solid var(--border-color, #dce4ee);
+  border-radius: 6px;
+  background: transparent;
+  color: var(--primary-color, #2563eb);
+  font-size: 11px;
+  font-weight: 650;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.ff-view-btn:hover {
+  background: var(--primary-color, #2563eb);
+  color: white;
+  border-color: var(--primary-color, #2563eb);
+}
+
+/* Responsive */
+
+@media (max-width: 768px) {
+  .ff-table-container {
+    overflow-x: auto;
+  }
+
+  .ff-ticket-table {
+    min-width: 950px;
+  }
+}

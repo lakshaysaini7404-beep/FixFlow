@@ -167,6 +167,7 @@ import ResetPassword from "./pages/ResetPassword";
 import UserDashboard from "./pages/UserDashboard";
 import ReportIssue from "./pages/ReportIssue";
 import MyTickets from "./pages/MyTickets";
+import Settings from "./pages/Settings";
 
 // Worker pages
 import WorkerDashboard from "./pages/workerDashboard";
@@ -204,6 +205,7 @@ function App() {
           {/* Authentication */}
           <Route path="/" element={<HomeRedirect />} />
           <Route path="/login" element={<HomeRedirect />} />
+
           <Route path="/register" element={<Register />} />
 
           <Route
@@ -310,10 +312,19 @@ function App() {
               path="/profile"
               element={<Profile />}
             />
+
+            {/* Settings — accessible to users and workers */}
+            <Route
+              path="/settings"
+              element={<Settings />}
+            />
           </Route>
 
           {/* Unknown URLs */}
-          <Route path="*" element={<Navigate to="/" replace />} />
+          <Route
+            path="*"
+            element={<Navigate to="/" replace />}
+          />
         </Routes>
       </BrowserRouter>
     </AuthProvider>

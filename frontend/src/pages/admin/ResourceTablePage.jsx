@@ -1,4 +1,3 @@
-
 import React, { useMemo, useState } from "react";
 import { Download, RefreshCw, Eye } from "lucide-react";
 import { useNavigate } from "react-router-dom";
@@ -104,40 +103,193 @@ export default function ResourceTablePage({
     return result;
   }, [columns, detailBase, navigate]);
 
- 
-const exportRows = () => {
-  const csv = [
-    columns.map((c) => c.label).join(","),
-    ...filtered.map((r) =>
-      columns
-        .map((c) =>
-          JSON.stringify(
-            String(r[c.key] ?? "").replace(/"/g, '""')
-          )
+  // Read a user's name, email and contact from a populated object.
+  const getPersonField = (person, field) => {
+    if (!person) return "";
+
+    if (typeof person !== "object") {
+      return field === "name" ? String(person) : "";
+    }
+
+    if (field === "name") {
+      return (
+        person.name ||
+        person.fullName ||
+        person.username ||
+        person.user?.name ||
+        person.user?.fullName ||
+        person.worker?.name ||
+        person.worker?.fullName ||
+        ""
+      );
+    }
+
+    if (field === "email") {
+      return (
+        person.email ||
+        person.user?.email ||
+        person.worker?.email ||
+        ""
+      );
+    }
+
+    if (field === "contact") {
+      return (
+        person.phone ||
+        person.phoneNumber ||
+        person.mobile ||
+        person.contact ||
+        person.contactNumber ||
+        person.user?.phone ||
+        person.user?.phoneNumber ||
+        person.user?.mobile ||
+        person.user?.contact ||
+        person.worker?.phone ||
+        person.worker?.phoneNumber ||
+        person.worker?.mobile ||
+        ""
+      );
+    }
+
+    return "";
+  };
+
+  const getValue = (row, key) => {
+    // Ticket creator details
+    if (key === "createdByName") {
+      return getPersonField(row?.createdBy, "name");
+    }
+
+    if (key === "createdByEmail") {
+      return getPersonField(row?.createdBy, "email");
+    }
+
+    if (key === "createdByContact") {
+      return getPersonField(row?.createdBy, "contact");
+    }
+
+    // Assigned worker details
+    if (key === "assignedWorkerName") {
+      return getPersonField(row?.assignedWorker, "name");
+    }
+
+    if (key === "assignedWorkerEmail") {
+      return getPersonField(row?.assignedWorker, "email");
+    }
+
+    if (key === "assignedWorkerContact") {
+      return getPersonField(row?.assignedWorker, "contact");
+    }
+
+    if (key === "assignedWorker") {
+      return getPersonField(row?.assignedWorker, "name");
+    }
+
+    if (key === "ticketNumber") {
+      return row?.ticketNumber ?? row?.ticketId ?? "";
+    }
+
+    if (key === "createdAt" || key === "created") {
+      const value = row?.[key];
+
+      if (!value) return "";
+
+      const date = new Date(value);
+
+      return Number.isNaN(date.getTime())
+        ? value
+        : date.toISOString();
+    }
+
+    const value = row?.[key];
+
+    if (value === null || value === undefined) {
+      return "";
+    }
+
+    if (Array.isArray(value)) {
+      return value
+        .map((item) =>
+          typeof item === "object"
+            ? item?.name || item?.fullName || item?.email || ""
+            : String(item)
         )
-        .join(",")
-    ),
-  ].join("\r\n");
+        .filter(Boolean)
+        .join(", ");
+    }
 
-  const blob = new Blob(["\uFEFF" + csv], {
-    type: "text/csv;charset=utf-8;",
-  });
+    if (typeof value === "object") {
+      return (
+        value.name ||
+        value.fullName ||
+        value.username ||
+        value.email ||
+        value.title ||
+        ""
+      );
+    }
 
-  const url = URL.createObjectURL(blob);
-  const a = document.createElement("a");
+    return value;
+  };
 
-  a.href = url;
-  a.download = `fixflow-${title
-    .toLowerCase()
-    .replace(/\s+/g, "-")}.csv`;
+  const escapeCSV = (value) => {
+    return `"${String(value ?? "").replace(/"/g, '""')}"`;
+  };
 
-  document.body.appendChild(a);
-  a.click();
-  a.remove();
+  const exportRows = () => {
+    const isTicketExport =
+      columns.some((column) => column.key === "title") &&
+      columns.some((column) => column.key === "category");
 
-  URL.revokeObjectURL(url);
-};
+    const exportColumns = isTicketExport
+      ? [
+          { label: "Ticket ID", key: "ticketNumber" },
+          { label: "Issue", key: "title" },
+          { label: "Category", key: "category" },
+          { label: "Priority", key: "priority" },
+          { label: "Status", key: "status" },
+          { label: "Created", key: "createdAt" },
 
+          { label: "Reported By", key: "createdByName" },
+          { label: "User Email", key: "createdByEmail" },
+          { label: "User Contact", key: "createdByContact" },
+
+          { label: "Assigned Worker", key: "assignedWorkerName" },
+          { label: "Worker Email", key: "assignedWorkerEmail" },
+          { label: "Worker Contact", key: "assignedWorkerContact" },
+        ]
+      : columns;
+
+    const csv = [
+      exportColumns
+        .map((column) => escapeCSV(column.label))
+        .join(","),
+
+      ...filtered.map((row) =>
+        exportColumns
+          .map((column) => escapeCSV(getValue(row, column.key)))
+          .join(",")
+      ),
+    ].join("\r\n");
+
+    const blob = new Blob(["\uFEFF" + csv], {
+      type: "text/csv;charset=utf-8;",
+    });
+
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+
+    a.href = url;
+    a.download = `fixflow-${title
+      .toLowerCase()
+      .replace(/\s+/g, "-")}.csv`;
+
+    document.body.appendChild(a);
+    a.click();
+    a.remove();
+
+    URL.revokeObjectURL(url);
+  };
 
   return (
     <>

@@ -11,8 +11,14 @@ const Review = require("../models/review");
 const User = require("../models/user");
 
 const { generateTicketNumber } = require("../utils/ticketNumber");
-
-const { notify, emitToUser } = require("../services/notificationService");
+const {
+  notify,
+  emitToUser,
+} = require("../services/notificationService");
+console.log("NOTIFICATION SERVICE:", {
+  notify: typeof notify,
+  emitToUser: typeof emitToUser,
+});
 
 const {
 
@@ -308,7 +314,15 @@ async function createTicket(req, res, next) {
 
 
 
-    emitToUser(req, "workers", "ticket:created", ticket);
+    const io = req.app.get("io");
+
+if (io) {
+  matchingWorkers.forEach((worker) => {
+    io.to(`user:${worker._id}`).emit("ticket:created", {
+      ticket,
+    });
+  });
+}
 
 
 

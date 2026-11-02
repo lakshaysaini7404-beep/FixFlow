@@ -13,6 +13,19 @@ const ticketSchema = new mongoose.Schema(
       unique: true,
       trim: true,
     },
+    workerLocation: {
+  latitude: {
+    type: Number,
+    min: -90,
+    max: 90,
+  },
+  longitude: {
+    type: Number,
+    min: -180,
+    max: 180,
+  },
+  updatedAt: Date,
+},
 
     createdBy: {
       type: mongoose.Schema.Types.ObjectId,

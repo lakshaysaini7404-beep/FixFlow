@@ -1,4 +1,5 @@
-import { useState } from "react";
+
+import { useEffect, useState } from "react";
 import { useNavigate, Link } from "react-router-dom";
 import {
   UserRound,
@@ -13,10 +14,12 @@ import {
   ArrowRight,
   CheckCircle2,
   X,
+  ShieldCheck,
+  RefreshCw,
 } from "lucide-react";
 
 import "./register.css";
-import {api} from "../../services/api";
+import { api } from "../../services/api";
 import { dashboardPath, useAuth } from "../../context/AuthContext";
 import LocationPicker from "../../components/LocationPicker";
 
@@ -44,6 +47,40 @@ const WORKER_CATEGORIES = [
   "Other",
 ];
 
+// Supports VITE_API_URL with or without the /api suffix.
+const configuredApiUrl = (
+  import.meta.env.VITE_API_URL || "http://localhost:5000"
+).replace(/\/+$/, "");
+
+const API_BASE_URL = configuredApiUrl.endsWith("/api")
+  ? configuredApiUrl
+  : `${configuredApiUrl}/api`;
+
+async function otpRequest(endpoint, payload) {
+  const response = await fetch(`${API_BASE_URL}/auth/${endpoint}`, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify(payload),
+  });
+
+  const data = await response.json().catch(() => ({}));
+
+  if (!response.ok) {
+    const error = new Error(
+      data.message || "Request failed. Please try again."
+    );
+
+    error.status = response.status;
+    error.data = data;
+
+    throw error;
+  }
+
+  return data;
+}
+
 export default function Register() {
   const navigate = useNavigate();
   const { login } = useAuth();
@@ -58,6 +95,28 @@ export default function Register() {
   const [error, setError] = useState("");
   const [success, setSuccess] = useState("");
 
+  // Email OTP state
+  const [otp, setOtp] = useState("");
+  const [otpSent, setOtpSent] = useState(false);
+  const [verifiedEmail, setVerifiedEmail] = useState("");
+  const [otpLoading, setOtpLoading] = useState(false);
+  const [resendCountdown, setResendCountdown] = useState(0);
+
+  const normalizedEmail = formData.email.trim().toLowerCase();
+
+  const emailVerified =
+    Boolean(verifiedEmail) && verifiedEmail === normalizedEmail;
+
+  useEffect(() => {
+    if (resendCountdown <= 0) return undefined;
+
+    const timer = setTimeout(() => {
+      setResendCountdown((previous) => Math.max(0, previous - 1));
+    }, 1000);
+
+    return () => clearTimeout(timer);
+  }, [resendCountdown]);
+
   const handleChange = (event) => {
     const { name, value } = event.target;
 
@@ -68,6 +127,14 @@ export default function Register() {
 
     setError("");
     setSuccess("");
+
+    // Changing the email invalidates the previous verification.
+    if (name === "email") {
+      setOtp("");
+      setOtpSent(false);
+      setVerifiedEmail("");
+      setResendCountdown(0);
+    }
   };
 
   const handleRoleChange = (nextRole) => {
@@ -99,11 +166,112 @@ export default function Register() {
     setSuccess("Location selected successfully.");
   };
 
+  // Send or resend the email verification OTP.
+  const handleSendOtp = async () => {
+    setError("");
+    setSuccess("");
+
+    if (!normalizedEmail) {
+      setError("Please enter your email address first.");
+      return;
+    }
+
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(normalizedEmail)) {
+      setError("Please enter a valid email address.");
+      return;
+    }
+
+    if (resendCountdown > 0 && otpSent) {
+      setError(
+        `Please wait ${resendCountdown} seconds before requesting another OTP.`
+      );
+      return;
+    }
+
+    try {
+      setOtpLoading(true);
+
+      const data = await otpRequest("send-otp", {
+        email: normalizedEmail,
+      });
+
+      setOtpSent(true);
+      setOtp("");
+      setVerifiedEmail(data.verified ? normalizedEmail : "");
+      setResendCountdown(data.verified ? 0 : data.resendAfter || 60);
+
+      setSuccess(
+        data.verified
+          ? "Your email is already verified. You can create your account."
+          : "OTP sent successfully! Check your email inbox and spam folder."
+      );
+    } catch (err) {
+      setError(
+        err.data?.message ||
+          err.message ||
+          "Unable to send OTP. Please try again."
+      );
+
+      if (err.data?.retryAfterSeconds) {
+        setResendCountdown(err.data.retryAfterSeconds);
+      }
+    } finally {
+      setOtpLoading(false);
+    }
+  };
+
+  // Verify the six-digit OTP.
+  const handleVerifyOtp = async () => {
+    setError("");
+    setSuccess("");
+
+    if (!normalizedEmail) {
+      setError("Please enter your email address.");
+      return;
+    }
+
+    if (!/^\d{6}$/.test(otp.trim())) {
+      setError("Please enter the complete six-digit OTP.");
+      return;
+    }
+
+    try {
+      setOtpLoading(true);
+
+      const data = await otpRequest("verify-otp", {
+        email: normalizedEmail,
+        otp: otp.trim(),
+      });
+
+      if (!data.verified) {
+        throw new Error("Email verification could not be completed.");
+      }
+
+      setVerifiedEmail(normalizedEmail);
+      setOtp("");
+      setSuccess("Email verified successfully! You can now register.");
+    } catch (err) {
+      setError(
+        err.data?.message ||
+          err.message ||
+          "OTP verification failed. Please try again."
+      );
+    } finally {
+      setOtpLoading(false);
+    }
+  };
+
   const handleSubmit = async (event) => {
     event.preventDefault();
 
     setError("");
     setSuccess("");
+
+    // Block registration until the current email is verified.
+    if (!emailVerified) {
+      setError("Please verify your email before creating your account.");
+      return;
+    }
 
     if (!formData.name.trim()) {
       setError("Please enter your full name.");
@@ -142,7 +310,7 @@ export default function Register() {
 
     const payload = {
       name: formData.name.trim(),
-      email: formData.email.trim().toLowerCase(),
+      email: normalizedEmail,
       password: formData.password,
       phone: formData.phone.trim(),
       address: formData.address.trim(),
@@ -171,8 +339,7 @@ export default function Register() {
 
       if (!data?.token || !data?.user) {
         throw new Error(
-          data?.message ||
-            "Registration succeeded or returned an unexpected response. Please check your backend response."
+          data?.message || "Unexpected registration response from the server."
         );
       }
 
@@ -209,9 +376,7 @@ export default function Register() {
 
         <div className="register-card">
           <div className="register-heading">
-            <span className="register-eyebrow">
-              CREATE YOUR ACCOUNT
-            </span>
+            <span className="register-eyebrow">CREATE YOUR ACCOUNT</span>
 
             <h2>Join FixFlow</h2>
 
@@ -284,6 +449,7 @@ export default function Register() {
               </div>
             </div>
 
+            {/* EMAIL + OTP VERIFICATION */}
             <div className="register-field">
               <label htmlFor="email">Email address</label>
 
@@ -299,8 +465,100 @@ export default function Register() {
                   onChange={handleChange}
                   autoComplete="email"
                   required
+                  disabled={loading}
                 />
+
+                {emailVerified && (
+                  <CheckCircle2
+                    size={20}
+                    className="register-verified-icon"
+                    aria-label="Email verified"
+                  />
+                )}
               </div>
+
+              {emailVerified ? (
+                <div className="register-otp-verified">
+                  <ShieldCheck size={17} />
+                  <span>Email address verified</span>
+                </div>
+              ) : (
+                <>
+                  <button
+                    type="button"
+                    className="register-otp-send"
+                    onClick={handleSendOtp}
+                    disabled={
+                      otpLoading ||
+                      loading ||
+                      (otpSent && resendCountdown > 0)
+                    }
+                  >
+                    {otpLoading ? (
+                      <>
+                        <RefreshCw size={16} className="register-spin" />
+                        Please wait...
+                      </>
+                    ) : otpSent ? (
+                      resendCountdown > 0 ? (
+                        `Resend OTP in ${resendCountdown}s`
+                      ) : (
+                        "Resend OTP"
+                      )
+                    ) : (
+                      <>
+                        <Mail size={16} />
+                        Send verification OTP
+                      </>
+                    )}
+                  </button>
+
+                  {otpSent && (
+                    <div className="register-otp-panel">
+                      <label htmlFor="registration-otp">
+                        Enter 6-digit OTP
+                      </label>
+
+                      <p className="register-help-text">
+                        Enter the code sent to {normalizedEmail}.
+                      </p>
+
+                      <input
+                        id="registration-otp"
+                        type="text"
+                        inputMode="numeric"
+                        autoComplete="one-time-code"
+                        placeholder="000000"
+                        maxLength={6}
+                        value={otp}
+                        onChange={(event) => {
+                          setOtp(
+                            event.target.value.replace(/\D/g, "").slice(0, 6)
+                          );
+                          setError("");
+                        }}
+                        disabled={otpLoading || loading}
+                        aria-label="Six-digit email verification code"
+                      />
+
+                      <button
+                        type="button"
+                        className="register-otp-verify"
+                        onClick={handleVerifyOtp}
+                        disabled={
+                          otpLoading || loading || otp.trim().length !== 6
+                        }
+                      >
+                        {otpLoading ? "Verifying..." : "Verify email"}
+                      </button>
+
+                      <p className="register-help-text">
+                        Didn't receive the email? Check your spam folder.
+                      </p>
+                    </div>
+                  )}
+                </>
+              )}
             </div>
 
             <div className="register-field">
@@ -344,9 +602,7 @@ export default function Register() {
                   type="button"
                   className="register-password-toggle"
                   onClick={() => setShowPassword((previous) => !previous)}
-                  aria-label={
-                    showPassword ? "Hide password" : "Show password"
-                  }
+                  aria-label={showPassword ? "Hide password" : "Show password"}
                 >
                   {showPassword ? (
                     <EyeOff size={18} />
@@ -462,7 +718,12 @@ export default function Register() {
             <button
               type="submit"
               className="register-submit"
-              disabled={loading}
+              disabled={loading || !emailVerified}
+              title={
+                !emailVerified
+                  ? "Verify your email before registering"
+                  : "Create your account"
+              }
             >
               {loading ? (
                 <span>Creating account...</span>
@@ -475,11 +736,16 @@ export default function Register() {
                 </>
               )}
             </button>
+
+            {!emailVerified && (
+              <p className="register-help-text register-submit-hint">
+                Verify your email to enable account creation.
+              </p>
+            )}
           </form>
 
           <div className="register-footer">
-            Already have an account?{" "}
-            <Link to="/">Sign in</Link>
+            Already have an account? <Link to="/">Sign in</Link>
           </div>
         </div>
 
@@ -525,8 +791,7 @@ export default function Register() {
 
             <LocationPicker
               initialLocation={
-                formData.latitude !== "" &&
-                formData.longitude !== ""
+                formData.latitude !== "" && formData.longitude !== ""
                   ? {
                       lat: Number(formData.latitude),
                       lng: Number(formData.longitude),

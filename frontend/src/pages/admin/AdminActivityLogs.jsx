@@ -1,2 +1,93 @@
-import React from "react";import { History,RefreshCw } from "lucide-react";import { adminApi,rowsFrom } from "../../services/adminApi";import useAdminResource from "./useAdminResource";import { PageHeader,Panel,Button,DataState,Table,StatusBadge,formatDate } from "../../components/AdminUI";
-export default function AdminActivityLogs(){const r=useAdminResource(adminApi.activityLogs,[]);const rows=rowsFrom(r.data);return <><PageHeader title="Activity logs" subtitle="Review recorded changes and administrative actions." action={<Button variant="secondary" onClick={r.reload}><RefreshCw size={15}/> Refresh</Button>}/><Panel title="Audit trail" subtitle="Entries are supplied by your backend audit endpoint"><DataState loading={r.loading} error={r.error} empty={!r.loading&&!r.error&&!rows.length} onRetry={r.reload}/>{!r.loading&&!r.error&&rows.length>0&&<Table rows={rows} columns={[{key:"createdAt",label:"Time",render:l=>formatDate(l.createdAt||l.timestamp||l.created_at)},{key:"actor",label:"Performed by",render:l=>l.actor?.name||l.admin?.name||l.user?.name||l.actorName||"—"},{key:"action",label:"Action",render:l=>l.action||l.event||l.type||"—"},{key:"entity",label:"Target",render:l=>l.entityType||l.resource||l.target||l.entity||"—"},{key:"details",label:"Details",render:l=>l.details||l.description||l.message||"—"},{key:"status",label:"Result",render:l=><StatusBadge value={l.status||l.result||"logged"}/>} ]}/>}</Panel></>}
+
+import React from "react";
+import { RefreshCw } from "lucide-react";
+
+import { adminApi, rowsFrom } from "../../services/adminApi";
+import useAdminResource from "./useAdminResource";
+
+import {
+  PageHeader,
+  Panel,
+  Button,
+  DataState,
+  Table,
+  StatusBadge,
+  formatDate,
+} from "../../components/AdminUI";
+
+export default function AdminActivityLogs() {
+  const r = useAdminResource(adminApi.activityLogs, []);
+  const rows = rowsFrom(r.data);
+
+  return (
+    <>
+      <PageHeader
+        title="Activity Logs"
+        subtitle="Monitor all recorded administrative activities."
+        action={
+          <Button variant="secondary" onClick={r.reload}>
+            <RefreshCw size={15} />
+            Refresh
+          </Button>
+        }
+      />
+
+      <Panel
+        title="Audit Trail"
+        subtitle={`${r.data?.total ?? rows.length} total activities`}
+      >
+        <DataState
+          loading={r.loading}
+          error={r.error}
+          empty={!r.loading && !r.error && rows.length === 0}
+          onRetry={r.reload}
+        />
+
+        {!r.loading && !r.error && rows.length > 0 && (
+          <Table
+            rows={rows}
+            columns={[
+              {
+                key: "createdAt",
+                label: "Date & Time",
+                render: (log) =>
+                  formatDate(log.createdAt || log.timestamp),
+              },
+              {
+                key: "actor",
+                label: "Performed By",
+                render: (log) =>
+                  log.actor?.name ||
+                  log.actor?.email ||
+                  "System",
+              },
+              {
+                key: "action",
+                label: "Action",
+                render: (log) => (
+                  <StatusBadge value={log.action || "Unknown"} />
+                ),
+              },
+              {
+                key: "target",
+                label: "Target",
+                render: (log) =>
+                  log.targetType
+                    ? `${log.targetType} - ${log.targetId || "N/A"}`
+                    : "N/A",
+              },
+              {
+                key: "details",
+                label: "Details",
+                render: (log) =>
+                  log.metadata
+                    ? JSON.stringify(log.metadata)
+                    : "No additional details",
+              },
+            ]}
+          />
+        )}
+      </Panel>
+    </>
+  );
+}

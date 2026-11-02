@@ -1,0 +1,139 @@
+.ticket-attachments {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  margin-top: 16px;
+}
+
+.ticket-attachments img {
+  width: 90px;
+  height: 90px;
+  object-fit: cover;
+  border-radius: 8px;
+  border: 1px solid #e5eaf2;
+}
+
+.resolution-notes {
+  margin-top: 16px;
+}
+
+/* Post, Accept and Ignore buttons */
+.ticket-action-buttons {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 10px;
+  margin-top: 10px;
+}
+
+/* Confirmation modal overlay */
+.ignore-modal-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 9999;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 20px;
+  background: rgba(10, 20, 40, 0.62);
+  backdrop-filter: blur(5px);
+}
+
+/* Modal card */
+.ignore-modal {
+  width: 100%;
+  max-width: 420px;
+  padding: 28px;
+  border: 1px solid #e5eaf2;
+  border-radius: 18px;
+  background: #ffffff;
+  color: #172b4d;
+  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.22);
+  text-align: center;
+  animation: ignoreModalIn 0.2s ease-out;
+}
+
+.ignore-modal-icon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 52px;
+  height: 52px;
+  margin: 0 auto 16px;
+  border-radius: 50%;
+  background: #fff0e8;
+  color: #d9480f;
+  font-size: 28px;
+  font-weight: 700;
+}
+
+.ignore-modal h2 {
+  margin: 0 0 12px;
+  color: #172b4d;
+  font-size: 22px;
+}
+
+.ignore-modal p {
+  margin: 0;
+  color: #667085;
+  font-size: 14px;
+  line-height: 1.7;
+}
+
+.ignore-modal-actions {
+  display: flex;
+  justify-content: center;
+  flex-wrap: wrap;
+  gap: 12px;
+  margin-top: 24px;
+}
+
+.ignore-modal-actions button {
+  min-height: 42px;
+}
+
+.ignore-modal .ignore-confirm-btn {
+  background: #dc3545;
+  border-color: #dc3545;
+  color: #ffffff;
+}
+
+.ignore-modal .ignore-confirm-btn:hover:not(:disabled) {
+  background: #bb2d3b;
+  border-color: #bb2d3b;
+}
+
+.ignore-modal button:disabled {
+  cursor: not-allowed;
+  opacity: 0.65;
+}
+
+@keyframes ignoreModalIn {
+  from {
+    opacity: 0;
+    transform: translateY(8px) scale(0.98);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+@media (max-width: 480px) {
+  .ignore-modal {
+    padding: 22px;
+  }
+
+  .ignore-modal-actions {
+    flex-direction: column-reverse;
+  }
+
+  .ignore-modal-actions button {
+    width: 100%;
+  }
+
+  .ticket-action-buttons {
+    gap: 8px;
+  }
+}

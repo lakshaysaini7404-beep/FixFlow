@@ -4,6 +4,8 @@ function getToken() {
   return localStorage.getItem("token");
 }
 
+
+
 async function request(path, options = {}) {
   const headers = { ...(options.headers || {}) };
   const token = getToken();
@@ -36,7 +38,11 @@ export const api = {
     request("/auth/change-password", { method: "POST", body: JSON.stringify(body) }),
   forgotPassword: (body) =>
     request("/auth/forgot-password", { method: "POST", body: JSON.stringify(body) }),
-
+  updateWorkerLocation: (id, latitude, longitude) =>
+  request(`/workers/tickets/${id}/location`, {
+    method: "POST",
+    body: JSON.stringify({ latitude, longitude }),
+  }),
 resetPassword: (body) =>
     request(`/auth/reset-password/${encodeURIComponent(body.token)}`, {
         method: "POST",

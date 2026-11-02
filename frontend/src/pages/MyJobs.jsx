@@ -68,24 +68,7 @@ export default function MyJobs() {
             onView={(id) => navigate(`/tickets/${id}`)}
           />
 
-          <section className="my-jobs-navigation">
-            <h2>Job Navigation</h2>
-
-            {activeJobs.length === 0 ? (
-              <p>
-                No accepted or in-progress jobs yet.
-                Accept a ticket to see its destination here.
-              </p>
-            ) : (
-              activeJobs.map((ticket) => (
-                <TicketNavigation
-                  key={ticket._id}
-                  ticket={ticket}
-                  onStarted={loadJobs}
-                />
-              ))
-            )}
-          </section>
+         
         </>
       )}
     </div>

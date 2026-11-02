@@ -1,3 +1,4 @@
+
 const mongoose = require("mongoose");
 
 const Ticket = require("../models/ticket");
@@ -12,7 +13,6 @@ async function audit(actor, action, extras = {}) {
   await AuditLog.create({ actor, action, ...extras });
 }
 
-// Validate MongoDB ID
 function isValidId(id) {
   return mongoose.Types.ObjectId.isValid(id);
 }
@@ -94,7 +94,7 @@ async function getWorkerDetails(req, res, next) {
   }
 }
 
-// Admin dashboard
+// Dashboard
 async function dashboard(req, res, next) {
   try {
     const [tickets, users, workers, reviews] = await Promise.all([
@@ -161,15 +161,11 @@ async function dashboard(req, res, next) {
       byCategory,
       avgResolutionHours: Number(avgResolutionHours.toFixed(1)),
       avgAssignHours: Number(avgAssignHours.toFixed(1)),
-      slaCompliance:
-        tickets.length > 0
-          ? Number(
-              (
-                ((tickets.length - overdue.length) / tickets.length) *
-                100
-              ).toFixed(1)
-            )
-          : 100,
+      slaCompliance: tickets.length
+        ? Number(
+            (((tickets.length - overdue.length) / tickets.length) * 100).toFixed(1)
+          )
+        : 100,
       avgRating: reviews.length
         ? Number(
             (
@@ -198,7 +194,6 @@ async function listTickets(req, res, next) {
 
     if (q) {
       const escapedQuery = q.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
-
       filter.$or = [
         { title: new RegExp(escapedQuery, "i") },
         { ticketNumber: new RegExp(escapedQuery, "i") },
@@ -237,17 +232,22 @@ async function assignWorker(req, res, next) {
     const { workerId } = req.body;
 
     if (!isValidId(req.params.id) || !isValidId(workerId)) {
-      return res.status(400).json({ message: "Invalid ticket or worker ID" });
+      return res.status(400).json({
+        message: "Invalid ticket or worker ID",
+      });
     }
 
     const worker = await User.findOne({
       _id: workerId,
       role: "worker",
       isActive: true,
+      isApproved: true,
     });
 
     if (!worker) {
-      return res.status(404).json({ message: "Active worker not found" });
+      return res.status(404).json({
+        message: "Active and approved worker not found",
+      });
     }
 
     const ticket = await Ticket.findById(req.params.id);
@@ -256,7 +256,14 @@ async function assignWorker(req, res, next) {
       return res.status(404).json({ message: "Ticket not found" });
     }
 
+    if (["Resolved", "Closed", "Cancelled"].includes(ticket.status)) {
+      return res.status(400).json({
+        message: "Cannot assign a completed or cancelled ticket",
+      });
+    }
+
     const fromStatus = ticket.status;
+    const previousWorker = ticket.assignedWorker;
 
     ticket.assignedWorker = worker._id;
     ticket.status = "Assigned";
@@ -267,16 +274,28 @@ async function assignWorker(req, res, next) {
     await Activity.create({
       ticket: ticket._id,
       actor: req.user.userId,
-      action: "admin-assigned",
+      action: previousWorker ? "admin-reassigned" : "admin-assigned",
       fromStatus,
       toStatus: "Assigned",
-      metadata: { workerId },
+      metadata: {
+        workerId: worker._id,
+        previousWorkerId: previousWorker || null,
+      },
     });
 
-    await audit(req.user.userId, "assign-worker", {
-      targetType: "Ticket",
-      targetId: ticket.id,
-    });
+    await audit(
+      req.user.userId,
+      previousWorker ? "reassign-worker" : "assign-worker",
+      {
+        targetType: "Ticket",
+        targetId: ticket.id,
+        metadata: {
+          workerId: worker._id,
+          workerName: worker.name,
+          previousWorkerId: previousWorker || null,
+        },
+      }
+    );
 
     await notify(req, {
       recipient: worker._id,
@@ -292,7 +311,17 @@ async function assignWorker(req, res, next) {
       message: `${ticket.ticketNumber} was assigned to ${worker.name}`,
     });
 
-    return res.json({ message: "Worker assigned", ticket });
+    const updatedTicket = await Ticket.findById(ticket._id)
+      .populate("createdBy", "name email")
+      .populate("assignedWorker", "name email category");
+
+    return res.json({
+      success: true,
+      message: previousWorker
+        ? "Worker reassigned successfully"
+        : "Worker assigned successfully",
+      ticket: updatedTicket,
+    });
   } catch (error) {
     next(error);
   }
@@ -302,6 +331,70 @@ async function assignWorker(req, res, next) {
 async function reassignWorker(req, res, next) {
   req.body.workerId = req.body.workerId || req.body.newWorkerId;
   return assignWorker(req, res, next);
+}
+
+// List all assignments
+async function listAssignments(req, res, next) {
+  try {
+    const page = Math.max(1, Number(req.query.page) || 1);
+    const limit = Math.min(100, Math.max(1, Number(req.query.limit) || 50));
+    const skip = (page - 1) * limit;
+
+    const filter = {
+      assignedWorker: { $exists: true, $ne: null },
+    };
+
+    if (req.query.status) filter.status = req.query.status;
+
+    const [assignments, total] = await Promise.all([
+      Ticket.find(filter)
+        .populate("createdBy", "name email")
+        .populate("assignedWorker", "name email category")
+        .sort({ updatedAt: -1 })
+        .skip(skip)
+        .limit(limit)
+        .lean(),
+      Ticket.countDocuments(filter),
+    ]);
+
+    return res.json({
+      success: true,
+      assignments,
+      total,
+      page,
+      limit,
+      totalPages: Math.ceil(total / limit),
+    });
+  } catch (error) {
+    next(error);
+  }
+}
+
+// Create assignment
+async function createAssignment(req, res, next) {
+  console.log("🔥 CREATE ASSIGNMENT ROUTE HIT");
+  try {
+    const { ticketId, workerId } = req.body;
+
+    if (!ticketId || !workerId) {
+      return res.status(400).json({
+        message: "Ticket ID and Worker ID are required",
+      });
+    }
+
+    if (!isValidId(ticketId) || !isValidId(workerId)) {
+      return res.status(400).json({
+        message: "Invalid ticket ID or worker ID",
+      });
+    }
+
+    req.params.id = ticketId;
+    req.body.workerId = workerId;
+
+    return assignWorker(req, res, next);
+  } catch (error) {
+    next(error);
+  }
 }
 
 // Update ticket priority
@@ -485,7 +578,7 @@ async function listWorkers(req, res, next) {
   }
 }
 
-// Get worker list status
+// Get worker status
 async function updateWorkerStatus(req, res, next) {
   try {
     const updates = {};
@@ -585,12 +678,49 @@ async function reports(req, res, next) {
   }
 }
 
+// Get activity logs
+async function activityLogs(req, res, next) {
+  try {
+    const page = Math.max(1, Number(req.query.page) || 1);
+    const limit = Math.min(100, Math.max(1, Number(req.query.limit) || 20));
+    const skip = (page - 1) * limit;
+
+    const filter = {};
+
+    if (req.query.action) filter.action = req.query.action;
+    if (req.query.targetType) filter.targetType = req.query.targetType;
+
+    const [logs, total] = await Promise.all([
+      AuditLog.find(filter)
+        .populate("actor", "name email role")
+        .sort({ createdAt: -1 })
+        .skip(skip)
+        .limit(limit)
+        .lean(),
+      AuditLog.countDocuments(filter),
+    ]);
+
+    return res.json({
+      success: true,
+      logs,
+      total,
+      page,
+      limit,
+      totalPages: Math.ceil(total / limit),
+    });
+  } catch (error) {
+    next(error);
+  }
+}
+
 module.exports = {
   dashboard,
   listTickets,
   getTicketDetails,
   assignWorker,
   reassignWorker,
+  listAssignments,
+  createAssignment,
   updatePriority,
   updateTicketStatus,
   listUsers,
@@ -600,4 +730,5 @@ module.exports = {
   getWorkerDetails,
   updateWorkerStatus,
   reports,
+  activityLogs,
 };

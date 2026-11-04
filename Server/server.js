@@ -11,7 +11,6 @@ const { Server } = require("socket.io");
 
 dotenv.config();
 
-// Local development DNS workaround for MongoDB Atlas SRV
 if (process.env.NODE_ENV !== "production") {
   dns.setServers(["8.8.8.8", "8.8.4.4"]);
 }

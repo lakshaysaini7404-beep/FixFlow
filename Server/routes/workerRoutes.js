@@ -1,7 +1,10 @@
 const express = require("express");
 const { authenticateToken } = require("../middleware/authMiddleware");
 const { authorizeRoles } = require("../middleware/roleMiddleware");
-const { upload } = require("../middleware/uploadMiddleware");
+const {
+  upload,
+  uploadToCloudinary,
+} = require("../middleware/uploadMiddleware");
 const {
   availableTickets,
   acceptTicket,
@@ -31,6 +34,11 @@ router.post(
   updateWorkerLocation
 );
 router.post("/tickets/:id/notes", addWorkNotes);
-router.post("/tickets/:id/resolve", upload.array("photos", 5), resolveJob);
+router.post(
+  "/tickets/:id/resolve",
+  upload.array("photos", 5),
+  uploadToCloudinary,
+  resolveJob
+);
 
 module.exports = router;

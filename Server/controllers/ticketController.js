@@ -39,17 +39,13 @@ const {
 
 
 function fileMeta(req, files) {
-
   return (files || []).map((file) => ({
-
-    url: `${req.protocol}://${req.get("host")}/uploads/${file.filename}`,
-
+    url: file.path?.startsWith("https://")
+      ? file.path
+      : `${req.protocol}://${req.get("host")}/uploads/${file.filename}`,
     filename: file.originalname,
-
     mimeType: file.mimetype,
-
   }));
-
 }
 
 

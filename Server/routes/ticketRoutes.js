@@ -1,7 +1,10 @@
 const express = require("express");
 const { authenticateToken } = require("../middleware/authMiddleware");
 const { authorizeRoles } = require("../middleware/roleMiddleware");
-const { upload } = require("../middleware/uploadMiddleware");
+const {
+  upload,
+  uploadToCloudinary,
+} = require("../middleware/uploadMiddleware");
 const {
   createTicket,
   myTickets,
@@ -18,7 +21,13 @@ const router = express.Router();
 
 router.use(authenticateToken);
 
-router.post("/", authorizeRoles("user"), upload.array("photos", 5), createTicket);
+router.post(
+  "/",
+  authorizeRoles("user"),
+  upload.array("photos", 5),
+  uploadToCloudinary,
+  createTicket
+);
 router.get("/my", authorizeRoles("user"), myTickets);
 router.get("/:id/history", getHistory);
 router.get("/:id", getTicket);

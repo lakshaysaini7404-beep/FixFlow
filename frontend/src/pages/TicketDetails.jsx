@@ -9,7 +9,10 @@ import NavigationMap from "../components/NavigationMap";
 import LiveWorkerTracking from "../components/LiveWorkerTracking";
 import "./TicketDetails.css";
 
-const SOCKET_URL = "http://localhost:5000";
+const SOCKET_URL =
+  import.meta.env.VITE_SOCKET_URL ||
+  import.meta.env.VITE_API_URL ||
+  "http://localhost:5000";
 
 export default function TicketDetails() {
   const { id } = useParams();

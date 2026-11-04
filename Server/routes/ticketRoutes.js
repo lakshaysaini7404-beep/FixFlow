@@ -1,10 +1,14 @@
+
 const express = require("express");
+
 const { authenticateToken } = require("../middleware/authMiddleware");
 const { authorizeRoles } = require("../middleware/roleMiddleware");
+
 const {
   upload,
   uploadToCloudinary,
 } = require("../middleware/uploadMiddleware");
+
 const {
   createTicket,
   myTickets,
@@ -21,6 +25,7 @@ const router = express.Router();
 
 router.use(authenticateToken);
 
+// Create ticket with optional Cloudinary image uploads.
 router.post(
   "/",
   authorizeRoles("user"),
@@ -28,13 +33,47 @@ router.post(
   uploadToCloudinary,
   createTicket
 );
-router.get("/my", authorizeRoles("user"), myTickets);
+
+// User tickets.
+router.get(
+  "/my",
+  authorizeRoles("user"),
+  myTickets
+);
+
+// Ticket history and details.
 router.get("/:id/history", getHistory);
 router.get("/:id", getTicket);
-router.patch("/:id", authorizeRoles("user"), updateTicket);
+
+// Update ticket.
+router.patch(
+  "/:id",
+  authorizeRoles("user"),
+  updateTicket
+);
+
+// Comments.
 router.post("/:id/comments", addComment);
-router.post("/:id/confirm-resolution", authorizeRoles("user"), confirmResolution);
-router.post("/:id/reopen", authorizeRoles("user"), reopenTicket);
-router.post("/:id/reviews", authorizeRoles("user"), submitReview);
+
+// Confirm repair.
+router.post(
+  "/:id/confirm-resolution",
+  authorizeRoles("user"),
+  confirmResolution
+);
+
+// Reopen ticket.
+router.post(
+  "/:id/reopen",
+  authorizeRoles("user"),
+  reopenTicket
+);
+
+// Submit review.
+router.post(
+  "/:id/reviews",
+  authorizeRoles("user"),
+  submitReview
+);
 
 module.exports = router;

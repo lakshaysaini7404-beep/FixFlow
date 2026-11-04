@@ -1,10 +1,14 @@
+
 const express = require("express");
+
 const { authenticateToken } = require("../middleware/authMiddleware");
 const { authorizeRoles } = require("../middleware/roleMiddleware");
+
 const {
   upload,
   uploadToCloudinary,
 } = require("../middleware/uploadMiddleware");
+
 const {
   availableTickets,
   acceptTicket,
@@ -20,20 +24,36 @@ const {
 
 const router = express.Router();
 
-router.use(authenticateToken, authorizeRoles("worker"));
+// All worker routes require worker authentication.
+router.use(
+  authenticateToken,
+  authorizeRoles("worker")
+);
 
+// Dashboard and ticket discovery.
 router.get("/available-tickets", availableTickets);
 router.get("/my-jobs", myJobs);
 router.get("/my-stats", myStats);
 router.get("/my-acceptance-limit", myAcceptanceLimit);
+
+// Ticket actions.
 router.post("/tickets/:id/accept", acceptTicket);
 router.post("/tickets/:id/ignore", ignoreTicket);
 router.post("/tickets/:id/start", startJob);
+
+// Live GPS location.
 router.post(
   "/tickets/:id/location",
   updateWorkerLocation
 );
-router.post("/tickets/:id/notes", addWorkNotes);
+
+// Work notes.
+router.post(
+  "/tickets/:id/notes",
+  addWorkNotes
+);
+
+// Resolve job with optional completion photos.
 router.post(
   "/tickets/:id/resolve",
   upload.array("photos", 5),

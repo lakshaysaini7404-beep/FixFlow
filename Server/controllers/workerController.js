@@ -29,9 +29,7 @@ function fileMeta(req, files) {
   }));
 }
 
-/**
- * Get tickets that match the worker's skills and location.
- */
+// AVAILABLE TICKETS
 async function availableTickets(req, res, next) {
   try {
     const worker = req.authUser;
@@ -43,7 +41,8 @@ async function availableTickets(req, res, next) {
       !worker.isApproved
     ) {
       return res.status(403).json({
-        message: "Your worker account is not eligible to explore tickets",
+        message:
+          "Your worker account is not eligible to explore tickets",
       });
     }
 
@@ -84,9 +83,7 @@ async function availableTickets(req, res, next) {
   }
 }
 
-/**
- * Accept a ticket using the existing atomic assignment service.
- */
+// ACCEPT TICKET
 async function acceptTicket(req, res, next) {
   try {
     const ticket = await acceptTicketAtomically(
@@ -135,9 +132,7 @@ async function acceptTicket(req, res, next) {
   }
 }
 
-/**
- * Ignore a ticket while it is still available.
- */
+// IGNORE TICKET
 async function ignoreTicket(req, res, next) {
   try {
     const workerId = req.user.userId;
@@ -150,7 +145,9 @@ async function ignoreTicket(req, res, next) {
         assignedWorker: null,
       },
       {
-        $addToSet: { ignoredBy: workerId },
+        $addToSet: {
+          ignoredBy: workerId,
+        },
       },
       {
         new: true,
@@ -174,9 +171,7 @@ async function ignoreTicket(req, res, next) {
   }
 }
 
-/**
- * Get jobs assigned to the logged-in worker.
- */
+// MY JOBS
 async function myJobs(req, res, next) {
   try {
     const tickets = await Ticket.find({
@@ -191,9 +186,7 @@ async function myJobs(req, res, next) {
   }
 }
 
-/**
- * Start a job and notify the ticket owner in real time.
- */
+// START JOB
 async function startJob(req, res, next) {
   try {
     const ticket = await Ticket.findOneAndUpdate(
@@ -235,7 +228,6 @@ async function startJob(req, res, next) {
       message: `Work started on ${ticket.ticketNumber}`,
     });
 
-    // Refresh the owner's TicketDetails page without a manual reload.
     const io = req.app.get("io");
 
     if (io) {
@@ -254,9 +246,7 @@ async function startJob(req, res, next) {
   }
 }
 
-/**
- * Save work notes.
- */
+// ADD WORK NOTES
 async function addWorkNotes(req, res, next) {
   try {
     const ticket = await Ticket.findOne({
@@ -293,9 +283,7 @@ async function addWorkNotes(req, res, next) {
   }
 }
 
-/**
- * Update worker GPS location during an in-progress job.
- */
+// UPDATE WORKER LOCATION
 async function updateWorkerLocation(req, res, next) {
   try {
     const { latitude, longitude } = req.body;
@@ -357,7 +345,6 @@ async function updateWorkerLocation(req, res, next) {
       updatedAt: ticket.workerLocation.updatedAt,
     };
 
-    // Broadcast only to clients authorized to join this ticket's room.
     const io = req.app.get("io");
 
     if (io) {
@@ -376,12 +363,11 @@ async function updateWorkerLocation(req, res, next) {
   }
 }
 
-/**
- * Mark an assigned job as resolved.
- */
+// RESOLVE JOB
 async function resolveJob(req, res, next) {
   try {
-    const notes = req.body.resolutionNotes || req.body.notes;
+    const notes =
+      req.body.resolutionNotes || req.body.notes;
 
     const ticket = await Ticket.findOne({
       _id: req.params.id,
@@ -432,7 +418,8 @@ async function resolveJob(req, res, next) {
       recipient: ticket.createdBy,
       ticket: ticket._id,
       type: "ticket:resolved",
-      message: `${ticket.ticketNumber} has been marked resolved. Please confirm the repair.`,
+      message:
+        `${ticket.ticketNumber} has been marked resolved. Please confirm the repair.`,
     });
 
     emitToUser(
@@ -451,9 +438,7 @@ async function resolveJob(req, res, next) {
   }
 }
 
-/**
- * Worker dashboard statistics.
- */
+// WORKER STATISTICS
 async function myStats(req, res, next) {
   try {
     const workerId = req.user.userId;
@@ -474,7 +459,8 @@ async function myStats(req, res, next) {
     ).length;
 
     const resolvedToday = jobs.filter(
-      (job) => job.resolvedAt && job.resolvedAt >= start
+      (job) =>
+        job.resolvedAt && job.resolvedAt >= start
     ).length;
 
     const reviews = await Review.find({
@@ -483,8 +469,10 @@ async function myStats(req, res, next) {
 
     const avgRating =
       reviews.length > 0
-        ? reviews.reduce((sum, review) => sum + review.rating, 0) /
-          reviews.length
+        ? reviews.reduce(
+            (sum, review) => sum + review.rating,
+            0
+          ) / reviews.length
         : 0;
 
     return res.json({
@@ -502,12 +490,11 @@ async function myStats(req, res, next) {
   }
 }
 
-/**
- * Daily ticket acceptance limit.
- */
+// DAILY ACCEPTANCE LIMIT
 async function myAcceptanceLimit(req, res, next) {
   try {
     const used = await getTodayCount(req.user.userId);
+
     const limit =
       req.authUser.dailyLimit || DAILY_ACCEPTANCE_LIMIT;
 

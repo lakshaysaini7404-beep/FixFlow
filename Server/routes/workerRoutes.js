@@ -1,13 +1,8 @@
 
 const express = require("express");
-
+const { upload, uploadToCloudinary } = require("../middleware/uploadMiddleware");
 const { authenticateToken } = require("../middleware/authMiddleware");
 const { authorizeRoles } = require("../middleware/roleMiddleware");
-
-const {
-  upload,
-  uploadToCloudinary,
-} = require("../middleware/uploadMiddleware");
 
 const {
   availableTickets,

@@ -10,26 +10,23 @@ const {
 
 const uploadDir = path.join(__dirname, "..", "uploads");
 
-// Create local upload directory only when Cloudinary is not configured.
+// Create local uploads directory only when Cloudinary is not configured.
 if (!isCloudinaryConfigured && !fs.existsSync(uploadDir)) {
   fs.mkdirSync(uploadDir, { recursive: true });
 }
 
-// Use Cloudinary memory storage in production.
-// Use disk storage for local uploads.
+// Use memory storage for Cloudinary and disk storage for local uploads.
 const storage = isCloudinaryConfigured
   ? multer.memoryStorage()
   : multer.diskStorage({
-      destination: (_req, _file, cb) => {
-        cb(null, uploadDir);
-      },
+      destination: (_req, _file, cb) => cb(null, uploadDir),
       filename: (_req, file, cb) => {
         const ext = path.extname(file.originalname).toLowerCase();
+        const filename = `${Date.now()}-${Math.round(
+          Math.random() * 1e9
+        )}${ext}`;
 
-        cb(
-          null,
-          `${Date.now()}-${Math.round(Math.random() * 1e9)}${ext}`
-        );
+        cb(null, filename);
       },
     });
 
@@ -57,7 +54,7 @@ const upload = multer({
   },
 });
 
-// Upload images to Cloudinary.
+// Upload received images to Cloudinary when configured.
 async function uploadToCloudinary(req, res, next) {
   try {
     if (!isCloudinaryConfigured || !req.files?.length) {
@@ -65,13 +62,13 @@ async function uploadToCloudinary(req, res, next) {
     }
 
     for (const file of req.files) {
-      const result = await cloudinary.uploader.upload(
-        `data:${file.mimetype};base64,${file.buffer.toString("base64")}`,
-        {
-          folder: "fixflow",
-          resource_type: "image",
-        }
-      );
+      const base64Image = file.buffer.toString("base64");
+      const dataUri = `data:${file.mimetype};base64,${base64Image}`;
+
+      const result = await cloudinary.uploader.upload(dataUri, {
+        folder: "fixflow",
+        resource_type: "image",
+      });
 
       file.path = result.secure_url;
       file.filename = file.originalname;

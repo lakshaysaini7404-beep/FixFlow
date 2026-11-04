@@ -2,7 +2,6 @@
 const Ticket = require("../models/ticket");
 const Activity = require("../models/activity");
 const Review = require("../models/review");
-
 const {
   acceptTicketAtomically,
   getTodayCount,

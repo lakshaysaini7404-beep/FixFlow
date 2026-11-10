@@ -1,15 +1,18 @@
 
-const { Resend } = require("resend");
+const nodemailer = require("nodemailer");
 
-const resend = new Resend(process.env.RESEND_API_KEY);
-
-const FROM_EMAIL =
-  process.env.FROM_EMAIL || "FixFlow <onboarding@resend.dev>";
+const transporter = nodemailer.createTransport({
+  service: "gmail",
+  auth: {
+    user: process.env.GMAIL_USER,
+    pass: process.env.GMAIL_APP_PASSWORD,
+  },
+});
 
 // Send registration OTP
 async function sendRegistrationOtpEmail(email, otp) {
-  const { data, error } = await resend.emails.send({
-    from: FROM_EMAIL,
+  const info = await transporter.sendMail({
+    from: `"FixFlow Support" <${process.env.GMAIL_USER}>`,
     to: email,
     subject: "Verify your email - FixFlow",
     text: `Your FixFlow email verification OTP is ${otp}. It expires in 5 minutes. Do not share this OTP with anyone.`,
@@ -29,19 +32,14 @@ async function sendRegistrationOtpEmail(email, otp) {
     `,
   });
 
-  if (error) {
-    console.error("Registration OTP email failed:", error);
-    throw new Error(error.message || "Failed to send registration OTP email");
-  }
-
-  console.log("Registration OTP email accepted:", data?.id);
-  return data;
+  console.log("Registration OTP email sent:", info.messageId);
+  return info;
 }
 
 // Send password reset email
 async function sendPasswordResetEmail(email, resetUrl) {
-  const { data, error } = await resend.emails.send({
-    from: FROM_EMAIL,
+  const info = await transporter.sendMail({
+    from: `"FixFlow Support" <${process.env.GMAIL_USER}>`,
     to: email,
     subject: "Reset your FixFlow password",
     text: `Open this link to reset your password: ${resetUrl}\n\nThis link expires in 15 minutes.`,
@@ -64,13 +62,8 @@ async function sendPasswordResetEmail(email, resetUrl) {
     `,
   });
 
-  if (error) {
-    console.error("Password reset email failed:", error);
-    throw new Error(error.message || "Failed to send password reset email");
-  }
-
-  console.log("Password reset email accepted:", data?.id);
-  return data;
+  console.log("Password reset email sent:", info.messageId);
+  return info;
 }
 
 module.exports = {

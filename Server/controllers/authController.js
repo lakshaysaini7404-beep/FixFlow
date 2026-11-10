@@ -196,30 +196,41 @@ async function sendRegistrationOtp(req, res, next) {
 
     await record.save();
 
+    // Send OTP through Resend.
+    // If email delivery fails, use demo mode when enabled.
     try {
       await sendRegistrationOtpEmail(email, otp);
     } catch (emailError) {
-      // Delete only the OTP created by this request.
-      await RegistrationOtp.deleteOne({
-        _id: record._id,
-        otpHash,
-        verifiedAt: null,
-      }).catch(() => {});
+      if (process.env.DEMO_OTP_MODE === "true") {
+        console.log("----------------------------------");
+        console.log("FIXFLOW DEMO OTP");
+        console.log("Email:", email);
+        console.log("OTP:", otp);
+        console.log("Expires in: 5 minutes");
+        console.log("----------------------------------");
+      } else {
+        await RegistrationOtp.deleteOne({
+          _id: record._id,
+          otpHash,
+          verifiedAt: null,
+        }).catch(() => {});
 
-      console.error(
-        "Registration OTP email failed:",
-        emailError.message
-      );
+        console.error(
+          "Registration OTP email failed:",
+          emailError.message
+        );
 
-      return res.status(500).json({
-        success: false,
-        message: "Unable to send the verification email. Please try again.",
-      });
+        return res.status(500).json({
+          success: false,
+          message: "Unable to send the verification email. Please try again.",
+        });
+      }
     }
 
     return res.status(200).json({
       success: true,
-      message: "Verification OTP sent to your email. It expires in 5 minutes.",
+      message:
+        "Verification OTP sent or generated successfully. It expires in 5 minutes.",
       expiresIn: 300,
       resendAfter: 60,
     });
@@ -912,6 +923,7 @@ async function googleCallback(req, res) {
     );
   }
 }
+
 // ==================================================
 // EXPORT CONTROLLERS
 // ==================================================

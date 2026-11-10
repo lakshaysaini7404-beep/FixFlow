@@ -56,30 +56,48 @@ const API_BASE_URL = configuredApiUrl.endsWith("/api")
   ? configuredApiUrl
   : `${configuredApiUrl}/api`;
 
+
 async function otpRequest(endpoint, payload) {
-  const response = await fetch(`${API_BASE_URL}/auth/${endpoint}`, {
-    method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-    },
-    body: JSON.stringify(payload),
-  });
+  const controller = new AbortController();
+  const timeoutId = setTimeout(() => controller.abort(), 20000);
 
-  const data = await response.json().catch(() => ({}));
+  try {
+    const response = await fetch(`${API_BASE_URL}/auth/${endpoint}`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify(payload),
+      signal: controller.signal,
+    });
 
-  if (!response.ok) {
-    const error = new Error(
-      data.message || "Request failed. Please try again."
-    );
+    const data = await response.json().catch(() => ({}));
 
-    error.status = response.status;
-    error.data = data;
+    if (!response.ok) {
+      const error = new Error(
+        data.message || "Request failed. Please try again."
+      );
+
+      error.status = response.status;
+      error.data = data;
+
+      throw error;
+    }
+
+    return data;
+  } catch (error) {
+    if (error.name === "AbortError") {
+      throw new Error(
+        "Request timed out. Please check your connection and try again."
+      );
+    }
 
     throw error;
+  } finally {
+    clearTimeout(timeoutId);
   }
-
-  return data;
 }
+
 
 export default function Register() {
   const navigate = useNavigate();
